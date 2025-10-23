@@ -7,9 +7,10 @@
 #include "files.h"
 #include "warp.h"
 #include "history.h"
+#include "builtin_jobs.h"
 
 int is_builtin(char* command) {
-    char* builtins[] = {"exit", "cd", "pwd", "help", "peek", "seek", "warp", "history"};
+    char* builtins[] = {"exit", "cd", "pwd", "help", "peek", "seek", "warp", "history", "fg", "bg", "jobs"};
     int num_builtins = sizeof(builtins) / sizeof(char*);
     for (int i = 0; i < num_builtins; i++) {
         if (strcmp(command, builtins[i]) == 0) return 1;
@@ -113,6 +114,9 @@ int execute_builtin(char** tokens) {
         print_history();
         return 1;
     }
+
+    if (strcmp(tokens[0], "fg") == 0) return cmd_fg(tokens);
+    if (strcmp(tokens[0], "bg") == 0) return cmd_bg(tokens);
 
 
     if (strcmp(tokens[0], "help") == 0) {

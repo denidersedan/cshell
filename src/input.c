@@ -70,10 +70,16 @@ static void redraw_line(const char *prompt, const char *buf, size_t len) {
 /* Read one character (blocking). Returns -1 on error. */
 static int read_char(void) {
     unsigned char c;
-    ssize_t n = read(STDIN_FILENO, &c, 1);
+    ssize_t n;
+    
+    // Loop until we get a real read or a real error
+    do {
+        n = read(STDIN_FILENO, &c, 1);
+    } while (n == -1 && errno == EINTR); // <-- THIS IS THE FIX
+
     if (n == 1) return c;
     if (n == 0) return -1; // EOF
-    return -1; // error
+    return -1; // Other error
 }
 
 /* Main line reader with simple editing + history up/down */
