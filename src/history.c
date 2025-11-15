@@ -24,27 +24,27 @@ void add_history(const char *cmd) {
     if (hist_count < MAX_HISTORY) {
         history[hist_count++] = strdup(cmd);
     } else {
-        // Rolling history: remove oldest
+        // rolling history: remove oldest
         free(history[0]);
         for (int i = 1; i < MAX_HISTORY; i++)
             history[i-1] = history[i];
         history[MAX_HISTORY-1] = strdup(cmd);
     }
 
-    // Append to file, trim if exceeding MAX_HISTORY_FILE
+    // append to file, trim if exceeding MAX_HISTORY_FILE
     FILE *file = fopen(HISTORY_FILE, "a+");
     if (!file) return;
 
     fprintf(file, "%s\n", cmd);
 
-    // Check line count
+    // check line count
     fseek(file, 0, SEEK_SET);
     int lines = 0;
     char buf[1024];
     while (fgets(buf, sizeof(buf), file)) lines++;
 
     if (lines > MAX_HISTORY_FILE) {
-        // Rewrite last MAX_HISTORY_FILE commands
+        // rewrite last MAX_HISTORY_FILE commands
         char *lines_buffer[MAX_HISTORY_FILE];
         int idx = 0;
 
@@ -77,7 +77,6 @@ void add_history(const char *cmd) {
 }
 
 void save_history(void) {
-    // Optional: rewrite full history (if you want trimming)
     FILE *file = fopen(HISTORY_FILE, "w");
     if (!file) return;
     for (int i = 0; i < hist_count; i++) {

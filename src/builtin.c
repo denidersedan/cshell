@@ -42,7 +42,6 @@ int execute_builtin(char** tokens) {
     }
 
     if (strcmp(tokens[0], "seek") == 0) {
-        // Flags and params
         int name_filter = 0;
         int size_filter = 0;
         char *pattern = NULL;
@@ -123,8 +122,13 @@ int execute_builtin(char** tokens) {
         printf("My Shell - Built-in commands:\n");
         printf("  cd [dir]      Change directory\n");
         printf("  pwd           Print working directory\n");
-        printf("  peek [dir]    List files\n");
-        printf("  seek <p> [d]  Find files matching pattern\n");
+        printf("  peek [dir]    List files recursively\n");
+        printf("  seek [flags]  Find files (-n name, -s size)\n");
+        printf("  warp [dir]    Fast directory navigation\n");
+        printf("  history       Show command history\n");
+        printf("  jobs          List background jobs\n");
+        printf("  fg <pid>      Bring job to foreground\n");
+        printf("  bg <pid>      Continue job in background\n");
         printf("  exit          Exit shell\n");
         printf("  help          Show help\n");
         return 1;

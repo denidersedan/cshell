@@ -41,7 +41,7 @@ int execute_command(char** tokens) {
     if (tokens == NULL || tokens[0] == NULL) return 1;
 
     if (is_builtin(tokens[0])) {
-        return execute_builtin(tokens);   // builtins.c
+        return execute_builtin(tokens);
     }
 
     // Detect background (& as last token)
@@ -61,21 +61,20 @@ int execute_command(char** tokens) {
 
     if (pid == 0) {
         setpgid(0, 0);
-        // Child: execute external command
-        // Restore default signals if you install handlers in parent (optional)
+        // child: execute external command
+        
         signal(SIGINT, SIG_DFL); 
         signal(SIGTSTP, SIG_DFL);
 
         execvp(tokens[0], tokens);
-        // If execvp returns, it's an error
+        
         perror("execvp");
         exit(EXIT_FAILURE);
     } else {
-        // Parent
+        // parent
         char *input_line = reconstruct_cmdline(tokens);
         setpgid(pid, pid);
         if (!background) {
-            //input_restore();
 
             pid_t shell_pgid = getpgrp();
             tcsetpgrp(STDIN_FILENO, pid); 
@@ -91,13 +90,11 @@ int execute_command(char** tokens) {
             sigaction(SIGINT, &old_int, NULL);
             sigaction(SIGTSTP, &old_tstp, NULL);
 
-            //input_init();
-
             if (WIFSTOPPED(status)) {
-                // 1. Capture the pointer to the new job
+                // capture the pointer to the new job
                 job_t* job = add_job(pid, input_line, 1); // mark as stopped
     
-                // 2. Print the job's ID, not its PID
+                // print the job's ID
                 if (job) {
                     printf("\n[%d]+ Stopped %s\n", job->id, job->cmdline);
                 }

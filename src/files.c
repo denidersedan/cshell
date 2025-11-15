@@ -69,7 +69,7 @@ void list_files_recursive_tree(char *path, char *prefix) {
     struct dirent *entry;
     struct stat file_meta;
 
-    // First collect entries (skip "." and "..") so we know which is last
+    // collect entries (skip "." and "..") so we know which is last
     char **names = NULL;
     size_t count = 0, cap = 0;
     while ((entry = readdir(dir)) != NULL) {
@@ -84,17 +84,17 @@ void list_files_recursive_tree(char *path, char *prefix) {
     }
     closedir(dir);
 
-    // Sort entries alphabetically (optional, remove if you don't want sorting)
+    // sort entries alphabetically
     if (count > 1) {
         qsort(names, count, sizeof(char*), (int(*)(const void*,const void*)) strcmp);
     }
 
-    // Iterate entries and print with tree characters
+    // iterate entries and print with tree characters
     for (size_t i = 0; i < count; ++i) {
         char *name = names[i];
         int is_last = (i == count - 1);
 
-        // Build full path
+        // build full path
         char full_path[PATH_MAX];
         if (snprintf(full_path, sizeof(full_path), "%s/%s", path, name) >= (int)sizeof(full_path)) {
             fprintf(stderr, "Path too long: %s/%s\n", path, name);
@@ -102,17 +102,17 @@ void list_files_recursive_tree(char *path, char *prefix) {
             continue;
         }
 
-        // Get metadata
+        // get metadata
         if (stat(full_path, &file_meta) < 0) {
             perror("stat");
             free(name);
             continue;
         }
 
-        // Print this entry with branch characters
+        // print this entry with branch characters
         printf("%s%s%s\n", prefix, (is_last ? "└── " : "├── "), name);
 
-        // If directory, recurse with extended prefix
+        // if directory, recurse with extended prefix
         if (S_ISDIR(file_meta.st_mode)) {
             // new_prefix = prefix + (is_last ? "    " : "│   ")
             char new_prefix[PATH_MAX];

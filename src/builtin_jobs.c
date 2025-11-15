@@ -1,11 +1,10 @@
-// builtin_jobs.c
 #define _POSIX_C_SOURCE 200809L
 
 #include "builtin_jobs.h"
 #include "jobs.h"
 #include "input.h"
 
-/* Helper: parse "%N" or "N" job spec; returns -1 on error */
+// parse "%N" or "N" job spec (returns -1 if error)
 int parse_job_spec(const char *s) {
     if (!s) return -1;
     if (s[0] == '%') s++;
@@ -16,9 +15,8 @@ int parse_job_spec(const char *s) {
     return (int)v;
 }
 
-/* fg %id */
 int cmd_fg(char **tokens) {
-    /* tokens[0] == "fg", tokens[1] should be "%N" or N */
+    // tokens[0] == "fg", tokens[1] should be "%N" or N 
     if (!tokens || !tokens[1]) {
         fprintf(stderr, "fg: usage: fg %%<jobid>\n");
         return 1;
@@ -36,28 +34,28 @@ int cmd_fg(char **tokens) {
 
     pid_t pgid = job->pgid;
 
-    input_restore();  // restore terminal modes for job
+    input_restore();  // restore terminal canonical mode for job control
 
-    /* Give terminal to job's process group */
+    // give terminal control to job's process group
     if (tcsetpgrp(STDIN_FILENO, pgid) < 0) {
         perror("tcsetpgrp");
     }
 
-    /* If stopped, resume the group */
+    // if stopped, send CONTINUE signal to every job in the process group
     if (job->stopped) {
         if (kill(-pgid, SIGCONT) < 0) {
             perror("kill(SIGCONT)");
         }
     }
 
-    /* Wait for the job to finish or stop again */
+    // wait for the job to finish or stop again
     int status;
     pid_t w;
     do {
         w = waitpid(-pgid, &status, WUNTRACED);
     } while (w == -1 && errno == EINTR);
 
-    /* After wait, restore terminal to shell's pgid (shell should be in its pgid already) */
+    // after wait, restore terminal to shell's pgid (shell should be in its pgid already)
     tcsetpgrp(STDIN_FILENO, getpgrp());
 
     input_init();  // re-enable raw mode for shell
@@ -71,13 +69,12 @@ int cmd_fg(char **tokens) {
         printf("\n[%d]+ Stopped  %s\n", job->id, job->cmdline);
         return 1;
     } else {
-        /* finished: remove job */
+        // finished: remove job
         remove_job(job);
         return 1;
     }
 }
 
-/* bg %id */
 int cmd_bg(char **tokens) {
     if (!tokens || !tokens[1]) {
         fprintf(stderr, "bg: usage: bg %%<jobid>\n");

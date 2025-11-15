@@ -14,20 +14,20 @@
 #include "include/input.h"
 #include "include/jobs.h"
 
-/* Globals used by terminal/job control */
+// globals used by terminal/job control
 static pid_t shell_pgid;
 static struct termios shell_tmodes;
 
-/* A simple flag you can check in input.c if you want to react to SIGINT while editing */
+// simple flag you can check in input.c if you want to react to SIGINT while editing
 volatile sig_atomic_t got_sigint = 0;
 
-/* SIGINT handler for the shell: just set a flag (shell shouldn't exit on Ctrl+C) */
+// SIGINT handler for the shell: just set a flag
 static void sigint_handler(int signo) {
     (void)signo;
     got_sigint = 1;
 }
 
-/* SIGCHLD handler: reap children (non-blocking). Keep it short and re-entrant-safe. */
+// SIGCHLD handler: reap children (non-blocking)
 static void sigchld_handler(int signo) {
     (void)signo;
     int saved_errno = errno;
@@ -36,55 +36,47 @@ static void sigchld_handler(int signo) {
         pid_t pid = waitpid(-1, &status, WNOHANG | WUNTRACED | WCONTINUED);
         if (pid <= 0) break;
 
-        // --- ADD THIS LOGIC ---
-        // Find the job corresponding to this process
-        // (This assumes job->pgid == pid, which is true for single-process jobs)
         job_t* job = find_job_by_pgid(pid);
         if (job) {
             if (WIFEXITED(status) || WIFSIGNALED(status)) {
-                // Job terminated (exited or killed)
+                // job terminated (exited or killed)
                 fprintf(stderr, "\n[%d] Done    %s\n", job->id, job->cmdline);
                 remove_job(job); // Remove from list
             } else if (WIFSTOPPED(status)) {
-                // Job was stopped
+                // job was stopped
                 fprintf(stderr, "\n[%d] Stopped %s\n", job->id, job->cmdline);
                 job->stopped = 1;
             } else if (WIFCONTINUED(status)) {
-                // Job was continued
+                // job was continued
                 job->stopped = 0;
             }
         }
-        // --- END ADDED LOGIC ---
     }
     errno = saved_errno;
 }
 
-/* Initialize shell process group, take terminal control, and install handlers */
+// initialize shell process group, take terminal control, and install handlers
 static void init_shell(void) {
-    /* Put shell in its own process group */
+    // put shell in its own process group
     shell_pgid = getpid();
     if (setpgid(shell_pgid, shell_pgid) < 0 && errno != EACCES) {
-        /* ignore EPERM sometimes when running under certain supervisors, but warn other errors */
         perror("setpgid");
     }
 
-    /* Take control of the terminal */
+    // take control of the terminal
     if (tcsetpgrp(STDIN_FILENO, shell_pgid) < 0) {
-        /* If this fails in non-interactive contexts it's OK; warn otherwise */
         perror("tcsetpgrp");
     }
 
-    /* Save current terminal modes so we can restore them after running jobs */
+    // save current terminal modes so we can restore them after running jobs
     if (tcgetattr(STDIN_FILENO, &shell_tmodes) < 0) {
-        /* Not fatal but warn */
-        // perror("tcgetattr");
     }
 
-    /* Ignore terminal stop signals in the shell itself so it doesn't get suspended */
+    // ignore terminal stop signals in the shell itself so it doesn't get suspended
     signal(SIGTTOU, SIG_IGN);
     signal(SIGTTIN, SIG_IGN);
 
-    /* Install SIGCHLD handler to reap background children (use sigaction) */
+    // install SIGCHLD handler to reap background children (use sigaction)
     struct sigaction sa_chld;
     sa_chld.sa_handler = sigchld_handler;
     sigemptyset(&sa_chld.sa_mask);
@@ -93,7 +85,7 @@ static void init_shell(void) {
         perror("sigaction(SIGCHLD)");
     }
 
-    /* Install a lightweight SIGINT handler for the shell (sets a flag) */
+    // install a lightweight SIGINT handler for the shell
     struct sigaction sa_int;
     sa_int.sa_handler = sigint_handler;
     sigemptyset(&sa_int.sa_mask);
@@ -110,11 +102,10 @@ int main(void) {
 
     load_history();
 
-    /* IMPORTANT: make the shell its own process group and set up terminal / handlers
-       before switching terminal modes or entering the input loop. */
+    // make the shell its own process group and set up terminal / handlers before switching terminal modes or entering the input loop.
     init_shell();
 
-    /* input_init() sets raw-ish mode for line editing (registers atexit to restore) */
+    // input_init() sets raw-ish mode for line editing
     input_init();
 
     while (status) {
@@ -142,7 +133,7 @@ int main(void) {
 
     save_history();
 
-    /* restore terminal modes and release (input_restore already registered with atexit) */
+    // restore terminal modes and release
     tcsetattr(STDIN_FILENO, TCSANOW, &shell_tmodes);
     tcsetpgrp(STDIN_FILENO, shell_pgid);
     input_restore();

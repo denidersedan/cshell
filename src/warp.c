@@ -7,7 +7,7 @@
 #define WARP_FILE ".warpdirs"
 #define MAX_LINE 1024
 
-// Helper: get full path to warp file in HOME
+// get full path to warp file in HOME
 static char* get_warp_file_path() {
     char* home = getenv("HOME");
     if (!home) return NULL;
@@ -17,7 +17,7 @@ static char* get_warp_file_path() {
     return path;
 }
 
-// Add or update alias
+// add or update alias
 static void warp_add(const char* alias) {
     char* path = get_warp_file_path();
     if (!path) {
@@ -35,14 +35,14 @@ static void warp_add(const char* alias) {
         return;
     }
 
-    // Copy existing lines, update if alias exists
+    // copy existing lines, update if alias exists
     if (fp) {
         while (fgets(line, sizeof(line), fp)) {
             char cur_alias[MAX_LINE];
             char cur_path[MAX_LINE];
             if (sscanf(line, "%[^=]=%s", cur_alias, cur_path) == 2) {
                 if (strcmp(cur_alias, alias) == 0) {
-                    // Alias already there, update it
+                    // alias already there, update it
                     char cwd[1024];
                     if (!getcwd(cwd, sizeof(cwd))) {
                         perror("getcwd");
@@ -51,7 +51,7 @@ static void warp_add(const char* alias) {
                     fprintf(tmp, "%s=%s\n", alias, cwd);
                     found = 1;
                 } else {
-                    // Add entire line to the end
+                    // add entire line to the end
                     fputs(line, tmp);
                 }
             }
@@ -78,7 +78,7 @@ static void warp_add(const char* alias) {
     printf("warp: added alias '%s' -> %s\n", alias, cwd);
 }
 
-// List all aliases
+// list all aliases
 static void warp_list() {
     char* path = get_warp_file_path();
     if (!path) return;
@@ -96,7 +96,7 @@ static void warp_list() {
     fclose(fp);
 }
 
-// Jump to alias
+// jump to alias
 static void warp_go(const char* alias) {
     char* path = get_warp_file_path();
     if (!path) return;
@@ -125,7 +125,7 @@ static void warp_go(const char* alias) {
     fprintf(stderr, "warp: alias '%s' not found\n", alias);
 }
 
-// Main warp command handler
+// warp command
 int warp_command(char **tokens) {
     if (!tokens[1]) {
         printf("Usage: warp <alias> | warp add <alias> | warp list\n");
@@ -146,7 +146,7 @@ int warp_command(char **tokens) {
         return 1;
     }
 
-    // Else: warp <alias>
+    // else, warp <alias>
     warp_go(tokens[1]);
     return 1;
 }

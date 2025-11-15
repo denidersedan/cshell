@@ -15,7 +15,7 @@
 static struct termios orig_termios;
 static int raw_enabled = 0;
 
-/* restore terminal on exit */
+// restore terminal to canonical mode
 void input_restore(void) {
     if (raw_enabled) {
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
@@ -23,7 +23,7 @@ void input_restore(void) {
     }
 }
 
-/* enable raw-ish mode (disable canonical + echo) */
+// enable raw-ish mode (disable canonical mode + echo)
 void input_init(void) {
     if (raw_enabled) return;
     if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) {
@@ -42,7 +42,7 @@ void input_init(void) {
     atexit(input_restore);
 }
 
-/* helper: write all bytes */
+// write all bytes
 static ssize_t xwrite(const void *buf, size_t n) {
     size_t left = n;
     const char *p = buf;
@@ -58,7 +58,7 @@ static ssize_t xwrite(const void *buf, size_t n) {
     return (ssize_t)n;
 }
 
-/* helper: redraw prompt + buffer (clear line then print) */
+// redraw prompt + buffer (clear line then print)
 static void redraw_line(const char *prompt, const char *buf, size_t len) {
     // \r = carriage return, \x1b[K clears to end of line
     xwrite("\r", 1);
@@ -67,7 +67,6 @@ static void redraw_line(const char *prompt, const char *buf, size_t len) {
     if (len > 0) xwrite(buf, len);
 }
 
-/* Read one character (blocking). Returns -1 on error. */
 static int read_char(void) {
     unsigned char c;
     ssize_t n;
@@ -75,14 +74,14 @@ static int read_char(void) {
     // Loop until we get a real read or a real error
     do {
         n = read(STDIN_FILENO, &c, 1);
-    } while (n == -1 && errno == EINTR); // <-- THIS IS THE FIX
+    } while (n == -1 && errno == EINTR);
 
     if (n == 1) return c;
     if (n == 0) return -1; // EOF
     return -1; // Other error
 }
 
-/* Main line reader with simple editing + history up/down */
+// main line reader with simple editing + history up/down arrows
 char *read_input_line(const char *prompt) {
     if (!prompt) prompt = "$ ";
 
@@ -186,7 +185,7 @@ char *read_input_line(const char *prompt) {
             continue;
         }
 
-        // Printable character (we keep it simple — no cursor movement)
+        // printable character (we keep it simple — no cursor movement)
         if (c >= 32 && c < 127) {
             if (buflen + 1 < INPUT_BUFSIZE) {
                 buf[buflen++] = (char)c;
@@ -202,7 +201,7 @@ char *read_input_line(const char *prompt) {
         }
     } // end read loop
 
-    // Return a copy (caller frees). If buffer empty return empty string (not NULL).
+    // return a copy (caller frees). If buffer empty return empty string (not NULL).
     char *ret = strdup(buf);
     free(buf);
     return ret;

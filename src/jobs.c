@@ -1,4 +1,3 @@
-// jobs.c
 #define _POSIX_C_SOURCE 200809L
 #include "jobs.h"
 
@@ -7,7 +6,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-/* Simple linked-list job table (single-threaded shell) */
+// simple linked-list job table
 static job_t *jobs_head = NULL;
 static int next_job_id = 1;
 
@@ -51,7 +50,7 @@ void remove_job(job_t *job) {
     }
 }
 
-/* mark/clear stopped flag */
+// mark/clear stopped flag
 void mark_job_stopped(job_t *job) {
     if (job) job->stopped = 1;
 }
@@ -59,7 +58,7 @@ void mark_job_running(job_t *job) {
     if (job) job->stopped = 0;
 }
 
-/* print concise jobs list; you can improve format as desired */
+// print concise jobs list; you can improve format as desired
 void print_jobs(void) {
     for (job_t *j = jobs_head; j; j = j->next) {
         printf("[%d] %s  %s\n", j->id,
